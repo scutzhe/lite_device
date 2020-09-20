@@ -47,6 +47,9 @@ class Predictor:
             scores, boxes = self.net.forward(images)
         boxes = boxes[0]
         scores = scores[0]
+        print("scores=",scores)
+        print("boxes.size()=",boxes.size())
+        print("scores.size()=",scores.size())
         if not prob_threshold:
             prob_threshold = self.filter_threshold
         # this version of nms is slower on GPU, so we move data to CPU.
@@ -63,6 +66,7 @@ class Predictor:
                 continue
             subset_boxes = boxes[mask, :]
             box_probs = torch.cat([subset_boxes, probs.reshape(-1, 1)], dim=1)
+            # print("box_probs.size()=",box_probs.size())
             box_probs = box_utils.nms(box_probs, self.nms_method,
                                       score_threshold=prob_threshold,
                                       iou_threshold=self.iou_threshold,
@@ -79,7 +83,7 @@ class Predictor:
         picked_box_probs[:, 2] *= width
         picked_box_probs[:, 3] *= height
         nms_et = time.time()-nms_st
-        print('nms耗时:', nms_et*1000)
+        # print('nms耗时:', nms_et*1000)
         return picked_box_probs[:, :4], torch.tensor(picked_labels), picked_box_probs[:, 4]
 
 class Predictor_w_h:
