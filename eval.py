@@ -7,23 +7,20 @@
 @desc    : 
 """
 import torch
-from data.voc_dataset import VOCDataset
+from data.arm_voc import ARMDataset
 from utils import box_utils, measurements
 from utils.misc import str2bool, Timer
 import argparse
 import pathlib
 import numpy as np
-import logging
-import sys
 from tqdm import tqdm
-from net.shufflenet_v2_ssdlite_w_h import create_shufflenetv2_ssd_lite, create_shufflenetv2_ssd_lite_predictor
-# from net.mobilenet_v2_ssd_lite import create_mobilenetv2_ssd_lite, create_mobilenetv2_ssd_lite_predictor
+# from net.shufflenet_v2_ssdlite_w_h import create_shufflenetv2_ssd_lite, create_shufflenetv2_ssd_lite_predictor
+from net.mobilenet_v2_ssd_lite import create_mobilenetv2_ssd_lite, create_mobilenetv2_ssd_lite_predictor
 from net.mobilenet_v2_ssd_lite_w_h import create_mobilenetv2_ssd_lite,create_mobilenetv2_ssd_lite_predictor
 
 import os
 os.environ["CUDA_DEVICE_ORDER"] = 'PCI_BUS_ID'
-os.environ["CUDA_VISIBLE_DEVICES"] = '3'
-os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
 def group_annotation_by_class(dataset):
     true_case_stat = {}
@@ -109,21 +106,19 @@ def compute_average_precision_per_class(num_true_cases, gt_boxes, difficult_case
         return measurements.compute_average_precision(precision, recall)
 
 
-def get_map(net_para, dataset, label_file,width_mult):
+def get_map(weight_path, dataset, label_file,width_mult=1.0):
     DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
     eval_path = pathlib.Path("eval_results")
     eval_path.mkdir(exist_ok=True)
     timer = Timer()
     class_names = [name.strip() for name in open(label_file).readlines()]
-
-    dataset = VOCDataset(dataset, is_test=True)
+    dataset = ARMDataset(dataset, is_train=False)
 
     true_case_stat, all_gb_boxes, all_difficult_cases = group_annotation_by_class(dataset)
-    net = create_mobilenetv2_ssd_lite(len(class_names), width_mult=width_mult, is_test=True)
+    net = create_mobilenetv2_ssd_lite(len(class_names)+1, width_mult=width_mult, is_test=True)
 
-    timer.start("Load Model")
-    net.load_weight(net_para)
+    timer.start("Load model ...")
+    net.load_weight(weight_path)
     net = net.to(DEVICE)
     predictor = create_mobilenetv2_ssd_lite_predictor(net, nms_method="hard", device=DEVICE)
 
@@ -183,15 +178,17 @@ def get_map_shufflenet(net_para, dataset, label_file):
     timer = Timer()
     class_names = [name.strip() for name in open(label_file).readlines()]
 
-    dataset = VOCDataset(dataset, is_test=True)
+    dataset = ARMDataset(dataset, is_train=False)
 
     true_case_stat, all_gb_boxes, all_difficult_cases = group_annotation_by_class(dataset)
-    net = create_shufflenetv2_ssd_lite(len(class_names),is_test=True)
+    # net = create_shufflenetv2_ssd_lite(len(class_names),is_test=True)
+    net = create_mobilenetv2_ssd_lite(len(class_names),is_test=True)
 
     timer.start("Load Model")
     net.load_weight(net_para)
     net = net.to(DEVICE)
-    predictor = create_shufflenetv2_ssd_lite_predictor(net,nms_method="hard", device=DEVICE)
+    # predictor = create_shufflenetv2_ssd_lite_predictor(net,nms_method="hard", device=DEVICE)
+    predictor = create_mobilenetv2_ssd_lite_predictor(net,nms_method="hard", device=DEVICE)
 
     results = []
     for i in tqdm(range(len(dataset))):
@@ -264,7 +261,7 @@ def main():
     class_names = [name.strip() for name in open(args.label_file).readlines()]
 
     if args.dataset_type == "voc":
-        dataset = VOCDataset(args.dataset, is_test=True)
+        dataset = ARMDataset(args.dataset, is_train=False)
 
     true_case_stat, all_gb_boxes, all_difficult_cases = group_annotation_by_class(dataset)
 
@@ -326,15 +323,8 @@ def main():
 
 
 if __name__ == '__main__':
-    # main()
-    # trained_model = "saved_model/mb2-ssd-lite-Epoch-150-Loss-2.8759542611929088.pth"
-    # label_file = "models/voc-model-labels.txt"
-
-    # trained_model = "saved_model/mb2-ssd-lite-Epoch-15-Loss-2.1904499530792236.pth"  # 0.4701236124995523
-    # trained_model = "saved_model/mb2-ssd-lite-Epoch-30-Loss-2.0793707370758057.pth"  # 0.4719300149648732
-    # trained_model = "saved_model/mb2-ssd-lite-Epoch-35-Loss-2.0251203179359436.pth"  # 0.4999871084292743
-
-    net_para = torch.load("saved_model/ori_mbn_v2_ssdlite/best.pth")
-    label_file = "saved_model/voc-model-labels.txt"
-    dataset = "/home/zhanjinhao/datasets/车辆检测/vehicle_det_mini_dataset"
+    model_path = "models/17_3.1705755591392517.pth"
+    net_para = torch.load(model_path)
+    label_file = "/home/zhex/data/army/labels.txt"
+    dataset = "/home/zhex/data/army"
     map = get_map(net_para, dataset, label_file)
