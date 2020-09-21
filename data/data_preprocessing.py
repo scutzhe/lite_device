@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-@author  : 秦丹峰
-@contact : daneven.jim@gmail.com
-@time    : 2020/8/4 23:23
-@file    : data_preprocessing.py
-@desc    : 
-"""
 import sys
 sys.path.append("..")
 from data.transforms import *

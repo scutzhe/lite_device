@@ -126,10 +126,10 @@ def convert2xml(xml_path,
 
 
 if __name__ == '__main__':
-	annotation_dir = "/home/zhex/data/arm_device/annotations"
-	image_dir = "/home/zhex/data/arm_device/images"
-	xml_dir = "/home/zhex/data/army/Annotations"
-	image_voc_dir = "/home/zhex/data/army/JPEGImages"
+	annotation_dir = "/home/zhex/data/arm_device_all/annotations"
+	image_dir = "/home/zhex/data/arm_device_all/images"
+	xml_dir = "/home/zhex/data/arm_device_voc/Annotations"
+	image_voc_dir = "/home/zhex/data/arm_device_voc/JPEGImages"
 	if not os.path.exists(xml_dir):
 		os.makedirs(xml_dir)
 	if not os.path.exists(image_voc_dir):
@@ -146,7 +146,7 @@ if __name__ == '__main__':
 		num_box = len(lines)
 		class_name = "device"
 		image_name = name.split(".")[0]+".jpg"
-		image_path = "army/JPEGImages/" + image_name
+		image_path = "arm_device_voc/JPEGImages/" + image_name
 		bbox = []
 		for line in lines:
 			info = line.strip().split(" ")

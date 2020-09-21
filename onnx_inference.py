@@ -8,12 +8,16 @@
 # @time    : 9/19/20 11:35 AM
 # @desc    :
 '''
-import torch
+import os
+import cv2
 import time
+import torch
+import torchvision
 import onnxruntime
-import torchvision.transforms as transforms
 from PIL import Image
-import numpy as np
+from data.transforms import *
+from net.config import ssd_config as config
+
 
 
 def image_deal(image_path):
@@ -23,7 +27,7 @@ def image_deal(image_path):
     """
     image = Image.open(image_path)
     image_resize = image.resize((300,300),Image.BICUBIC)
-    transform = transforms.Compose([transforms.ToTensor()
+    transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor()
                                     ])
     img_tensor = transform(image_resize)
     img_tensor = img_tensor.unsqueeze(0)
@@ -102,14 +106,14 @@ class ONNXModel():
         # scores, boxes = self.onnx_session.run(self.output_name, input_feed={self.input_name: iimage_numpy})
         input_feed = self.get_input_feed(self.input_name, image_numpy)
         scores, boxes = self.onnx_session.run(self.output_name, input_feed=input_feed)
-        return scores,boxes
+        return scores,boxes  ## type:numpy
 
 class Post(object):
     def __init__(self,scores,boxes):
         self.scores = scores
         self.boxes = boxes
 
-    def get_final_result(self, top_k=10, prob_threshold=0.998):
+    def get_final_result(self, top_k=10, prob_threshold=0.01):
         scores = to_tensor(self.scores[0])
         boxes = to_tensor(self.boxes[0])
         nms_st = time.time()
@@ -119,33 +123,37 @@ class Post(object):
         scores = scores.to(torch.device("cpu"))
         picked_box_probs = []
         picked_labels = []
-        for class_index in range(0,scores.size(1)):
+        for class_index in range(1,scores.size(1)):
             probs = scores[:, class_index]
             mask = probs > prob_threshold
             probs = probs[mask]
             if probs.size(0) == 0:
                 continue
             subset_boxes = boxes[mask, :]
-            box_probs = torch.cat([subset_boxes, probs.reshape(-1, 1)], dim=1)
-            print("box_probs.size()=",box_probs.size())
-            box_probs = self.hard_nms(box_probs,
-                                      iou_threshold=0.45,
-                                      top_k=top_k,
-                                      )
+            box_probs = torch.cat([subset_boxes, probs.reshape(-1, 1)], dim=1) # N * 5
+            print("box_probs_before.size()=",box_probs.size())
+            ## hard_nms效果很烂
+            # box_probs = self.hard_nms(box_probs,
+            #                           iou_threshold=0.5,
+            #                           top_k=top_k,
+            #                           )
+            ## soft_nms效果好一点,但是还是比较差劲
+            box_probs = self.soft_nms(box_probs,0.5)
+            print("box_probs_after.size()=", box_probs.size())
             picked_box_probs.append(box_probs)
             picked_labels.extend([class_index] * box_probs.size(0))
         if not picked_box_probs:
             return torch.tensor([]), torch.tensor([]), torch.tensor([])
         picked_box_probs = torch.cat(picked_box_probs)
-        picked_box_probs[:, 0] *= 1920
-        picked_box_probs[:, 1] *= 1080
-        picked_box_probs[:, 2] *= 1920
-        picked_box_probs[:, 3] *= 1080
+        picked_box_probs[:, 0] *= 1920 ## W
+        picked_box_probs[:, 1] *= 1080 ## H
+        picked_box_probs[:, 2] *= 1920 ## W
+        picked_box_probs[:, 3] *= 1080 ## H
         nms_et = time.time()-nms_st
-        print('nms time cost:', nms_et*1000)
+        print('nms time cost {} ms:'.format(nms_et*1000))
         return picked_box_probs[:, :4], torch.tensor(picked_labels), picked_box_probs[:, 4]
 
-    def soft_nms(self,box_scores, score_threshold, sigma=0.5, top_k=-1):
+    def soft_nms(self,box_scores, score_threshold, sigma=0.5, top_k=10):
         picked_box_scores = []
         while box_scores.size(0) > 0:
             max_score_index = torch.argmax(box_scores[:, 4])
@@ -165,7 +173,7 @@ class Post(object):
             return torch.tensor([])
 
 
-    def hard_nms(self,box_scores, iou_threshold, top_k=-1, candidate_size=200):
+    def hard_nms(self,box_scores, iou_threshold, top_k=-1, candidate_size=100):
         """
         Args:
             box_scores (N, 5): boxes in corner-form and probabilities.
@@ -178,6 +186,7 @@ class Post(object):
         scores = box_scores[:, -1]
         boxes = box_scores[:, :-1]
         picked = []
+
         _, indexes = scores.sort(descending=True)
         indexes = indexes[:candidate_size]
         while len(indexes) > 0:
@@ -228,22 +237,40 @@ class Post(object):
         return hw[..., 0] * hw[..., 1]
 
 
+class PredictionTransform:
+    def __init__(self, size, mean=0.0, std=1.0):
+        self.transform = Compose([
+            Resize(size),
+            SubtractMeans(mean),
+            lambda img, boxes=None, labels=None: (img / std, boxes, labels),
+            ToTensor()
+        ])
+
+    def __call__(self, image):
+        image, _, _ = self.transform(image)
+        return image
+
 if __name__ == "__main__":
-    import os
-    import cv2
     image_dir = "/home/zhex/test_result/tag_device"
+    transform = PredictionTransform(config.image_size, config.image_mean, config.image_std)
+    onnx_path = "onnx_model/electronic_tag.onnx"
+    model = ONNXModel(onnx_path)
+
     for name in os.listdir(image_dir):
         image_path = os.path.join(image_dir,name)
         image_bgr = cv2.imread(image_path)
-        img_tensor = image_deal(image_path)
-        onnx_path = "onnx_model/electronic_tag.onnx"
-        model = ONNXModel(onnx_path)
-        scores,boxes = model.forward(to_numpy(img_tensor))
-        # print("scores.shape=",scores.shape) #scores.shape = (1, 3000, 2)
-        # print("boxes.shape=",boxes.shape) #boxes.shape = (1, 3000, 4)
+        image_rgb = cv2.cvtColor(image_bgr,cv2.COLOR_BGR2RGB)
+        # img_tensor = image_deal(image_path)
+        image = transform(image_rgb)
+        image = image.unsqueeze(0)
+        scores,boxes = model.forward(to_numpy(image))
+        print("scores.shape=",scores.shape) #scores.shape = (1, 3000, 2)
+        print("boxes.shape=",boxes.shape) #boxes.shape = (1, 3000, 4)
+        st = time.time()
         post_dealing = Post(scores,boxes)
         boxes, labels, prob = post_dealing.get_final_result()
-        print("boxes,labels,prob=",boxes,labels,prob)
+        print("post dealing time {} ms".format(1000 *(time.time() - st)))
+        # print("boxes,labels,prob=",boxes,labels,prob)
         boxes = boxes.numpy()
         if boxes.shape[0] == 0:
             continue
@@ -253,4 +280,4 @@ if __name__ == "__main__":
             # label = f"{class_names[labels[i]]}: {prob[i]:.2f}"
             cv2.imshow("image",image_bgr)
             cv2.waitKey(1000)
-            # cv2.imwrite("eval_results" + "/" +"{}".format(image_name),image_bgr)
+            # cv2.imwrite("eval_results" + "/" +"{}".format(name),image_bgr)

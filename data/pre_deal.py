@@ -12,7 +12,8 @@ import os
 import shutil
 from tqdm import tqdm
 
-
+#image_dir = "/home/zhex/Downloads/tmp/01940002_output/data/obj"
+#/home/zhex/Downloads/tmp/01940002_output
 def deal_data(image_dir,txt_file_path,image_save_dir,annotation_save_dir):
     """
     @param image_dir:
@@ -28,13 +29,16 @@ def deal_data(image_dir,txt_file_path,image_save_dir,annotation_save_dir):
 
     txt_file = open(txt_file_path,"r")
     index = 0
+    middle_dir = image_dir.strip().split("/")
+    pre_image_dir = middle_dir[0] + "/" + middle_dir[1] + "/"+ middle_dir[2] + "/"+ \
+                    middle_dir[3] + "/" + middle_dir[4] + "/" +middle_dir[5] + "/"
     for line in tqdm(txt_file.readlines()):
         line = line.strip().split(".")
         jpg_name = line[0] + ".jpg"
         txt_name = line[0] + ".txt"
-        image_path = "/home/zhex/data/tmp/01940007_output/" + jpg_name
+        image_path = pre_image_dir + jpg_name
         # print("image_path=",image_path)
-        annotation_path = "/home/zhex/data/tmp/01940007_output/" + txt_name
+        annotation_path = pre_image_dir + txt_name
         # print("annotation_path=",annotation_path)
         shutil.copy(image_path,image_save_dir)
         shutil.copy(annotation_path,annotation_save_dir)
@@ -135,14 +139,20 @@ def get_txt(image_dir):
     val_file = open("val.txt","a")
     image_names = os.listdir(image_dir)
     length = len(image_names)
-    train_names = random.sample(image_names,int(0.8 * length))
+    train_names = random.sample(image_names,int(0.9 * length))
     val_names = [name for name in image_names if name not in train_names]
+    index_train = 0
     for name in tqdm(train_names):
         # train_file.write(name.strip().split(".")[0] + ".txt" + "\n")
         train_file.write(name.strip().split(".")[0]  + "\n")
+        index_train += 1
+    index_val = 0
     for name in tqdm(val_names):
         # val_file.write(name.strip().split(".")[0] + ".txt" + "\n")
         val_file.write(name.strip().split(".")[0] + "\n")
+        index_val += 1
+    print("index_train=",index_train)
+    print("index_val=",index_val)
 
 def check_xywh_xyxy(annotation_path,image_path):
     """
@@ -226,34 +236,27 @@ def cut_image(annotation_dir,image_dir,save_dir):
             cv2.imwrite(save_dir + "/" +"{}_{}.jpg".format(middle_name,index),image_new)
 
 # if __name__ == "__main__":
-#     image_dir = "/home/zhex/data/tmp/01940007_output/data/obj"
-#     txt_file_path = "/home/zhex/data/tmp/01940007_output/data/test.txt"
-#     image_save_dir = "/home/zhex/data/arm_device/images/train"
-#     annotation_save_dir = "/home/zhex/data/arm_device/annotations/train"
+#     image_dir = "/home/zhex/Downloads/tmp/01940006_output/data/obj"
+#     txt_file_path = "/home/zhex/Downloads/tmp/01940006_output/data/test.txt"
+#     image_save_dir = "/home/zhex/data/arm_device_all/images/"
+#     annotation_save_dir = "/home/zhex/data/arm_device_all/annotations/"
 #     deal_data(image_dir,txt_file_path,image_save_dir,annotation_save_dir)
 
 
 # if __name__ == "__main__":
-#     train_image_dir = "/home/zhex/data/arm_device/images/train"
-#     train_annotation_dir = "/home/zhex/data/arm_device/annotations/train"
-#     check(train_image_dir,train_annotation_dir)
-#     check(train_annotation_dir,train_image_dir)
-#     print("############################################################")
-#     test_image_dir = "/home/zhex/data/arm_device/images/test"
-#     test_annotation_dir = "/home/zhex/data/arm_device/annotations/test"
-#     check(test_image_dir,test_annotation_dir)
-#     check(test_annotation_dir,test_image_dir)
+#     image_dir = "/home/zhex/data/arm_device_all/images"
+#     annotation_dir = "/home/zhex/data/arm_device_all/annotations"
+#     check(image_dir,annotation_dir)
+#     check(annotation_dir,image_dir)
+
 
 # if __name__ == "__main__":
-#     train_image_dir = "/home/zhex/data/arm_device/images/train"
-#     train_annotation_dir = "/home/zhex/data/arm_device/annotations/train"
-#     delete_empty_file(train_image_dir,train_annotation_dir)
-#     print("############################################################")
-#     test_image_dir = "/home/zhex/data/arm_device/images/test"
-#     test_annotation_dir = "/home/zhex/data/arm_device/annotations/test"
-#     delete_empty_file(test_image_dir,test_annotation_dir)
+#     image_dir = "/home/zhex/data/arm_device_all/images"
+#     annotation_dir = "/home/zhex/data/arm_device_all/annotations"
+#     delete_empty_file(image_dir,annotation_dir)
 
 
+## 采用voc格式之后用不着这个方法
 # if __name__ == "__main__":
 #     image_dir = "/home/zhex/data/arm_device/images/train"
 #     annotations_dir = "/home/zhex/data/arm_device/annotations/train"
@@ -263,11 +266,11 @@ def cut_image(annotation_dir,image_dir,save_dir):
 
 
 # if __name__ == "__main__":
-    # image_dir = "/home/zhex/data/arm_device/images"
-    # get_txt(image_dir)
-    # annotation_path = "/home/zhex/data/arm_device/annotations/01940002_frame_1.txt"
-    # image_path = "/home/zhex/data/arm_device/images/01940002_frame_1.jpg"
-    # check_xywh_xyxy(annotation_path,image_path)
+#     image_dir = "/home/zhex/data/arm_device_voc/JPEGImages"
+#     get_txt(image_dir)
+#     annotation_path = "/home/zhex/data/arm_device/annotations/01940002_frame_1.txt"
+#     image_path = "/home/zhex/data/arm_device/images/01940002_frame_1.jpg"
+#     check_xywh_xyxy(annotation_path,image_path)
 
 # if __name__ == "__main__":
 #     image_dir = "/home/zhex/data/arm_device/images"

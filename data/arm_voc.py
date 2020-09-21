@@ -40,7 +40,7 @@ class ARMDataset:
             # prepend BACKGROUND as first class
             classes.insert(0, 'BACKGROUND')
             self.class_names = tuple(classes)
-            logging.info("Army Labels read from file: " + str(self.class_names))
+            logging.info("device Labels read from file: " + str(self.class_names))
 
         else:
             logging.info("No labels file, using default Army classes.")

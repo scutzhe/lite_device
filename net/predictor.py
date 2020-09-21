@@ -20,6 +20,9 @@ class Predictor:
     def __init__(self, net, size, mean=0.0, std=1.0, nms_method=None,
                  iou_threshold=0.45, filter_threshold=0.01, candidate_size=200, sigma=0.5, device=None):
         self.net = net
+        # size = 100
+        # mean = np.array([127,127,127])
+        # image_std = 128.0
         self.transform = PredictionTransform(size, mean, std)
         self.iou_threshold = iou_threshold
         self.filter_threshold = filter_threshold
@@ -47,11 +50,11 @@ class Predictor:
             scores, boxes = self.net.forward(images)
         boxes = boxes[0]
         scores = scores[0]
-        print("scores=",scores)
-        print("boxes.size()=",boxes.size())
-        print("scores.size()=",scores.size())
+        # print("scores=",scores)
+        # print("boxes.size()=",boxes.size())   #3000X4
+        # print("scores.size()=",scores.size()) #3000X2
         if not prob_threshold:
-            prob_threshold = self.filter_threshold
+            prob_threshold = self.filter_threshold #0.01
         # this version of nms is slower on GPU, so we move data to CPU.
         nms_st = time.time()
         boxes = boxes.to(cpu_device)
@@ -60,7 +63,7 @@ class Predictor:
         picked_labels = []
         for class_index in range(1, scores.size(1)):
             probs = scores[:, class_index]
-            mask = probs > prob_threshold
+            mask = probs > prob_threshold #0.01
             probs = probs[mask]
             if probs.size(0) == 0:
                 continue
