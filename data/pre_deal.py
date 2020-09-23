@@ -235,6 +235,53 @@ def cut_image(annotation_dir,image_dir,save_dir):
             index += 1
             cv2.imwrite(save_dir + "/" +"{}_{}.jpg".format(middle_name,index),image_new)
 
+def get_val_all(image_dir,txt_file_path,save_dir):
+    """
+    @param image_dir:
+    @param txt_file_path:
+    @param save_dir:
+    @return:
+    """
+    import cv2
+    assert os.path.exists(image_dir),"{} is null !!!".format(image_dir)
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    filex = open(txt_file_path)
+    for line in tqdm(filex.readlines()):
+        annotation_path = "/home/zhex/data/arm_device_all/annotations/" + line.strip() + ".txt"
+        # print("annotation_path=",annotation_path)
+        image_path = os.path.join(image_dir,line.strip() + ".jpg")
+        # print("image_path=",image_path)
+        middle_name = line.strip()
+        image = cv2.imread(image_path)
+        H,W = image.shape[:2]
+        index = 0
+        for line in open(annotation_path,"r").readlines():
+            info = line.strip().split(" ")
+            x1 = int((float(info[1]) - float(info[3]) / 2) * W)
+            y1 = int((float(info[2]) - float(info[4]) / 2) * H)
+            x2 = int((float(info[1]) + float(info[3]) / 2) * W)
+            y2 = int((float(info[2]) + float(info[4]) / 2) * H)
+
+            W0 = x2 -x1
+            H0 = y2 - y1
+            x1_ = x1 - W0//4
+            y1_ = y1 - H0//4
+            x2_ = x2 + W0//4
+            y2_ = y2 + H0//4
+
+            if x1_ < 0:
+                x1_ = 0
+            if y1_ < 0:
+                y1_ = 0
+            if x2_ > 1920:
+                x2_ = 1920
+            if y2_ > 1080:
+                y2_ = 1080
+            image_new = image[y1_:y2_,x1_:x2_,:]
+            cv2.imwrite(save_dir + "/" + "{}_{}.jpg".format(middle_name, index), image_new)
+            index += 1
+
 # if __name__ == "__main__":
 #     image_dir = "/home/zhex/Downloads/tmp/01940006_output/data/obj"
 #     txt_file_path = "/home/zhex/Downloads/tmp/01940006_output/data/test.txt"
@@ -287,6 +334,13 @@ def cut_image(annotation_dir,image_dir,save_dir):
 #     val_path = "/home/zhex/data/army/val.txt"
 #     save_dir = "/home/zhex/test_result/army_device"
 #     get_image(val_path,save_dir)
+
+
+# if __name__ == "__main__":
+#     image_dir = "/home/zhex/data/arm_device_all/images"
+#     txt_file_path = "/home/zhex/data/arm_device_voc/val.txt"
+#     save_dir = "/home/zhex/data/arm_device_all/mini_images"
+#     get_val_all(image_dir,txt_file_path,save_dir)
 
 # if __name__ == '__main__':
 #     annotation_dir = "/home/zhex/data/arm_device/annotations"

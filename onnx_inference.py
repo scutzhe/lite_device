@@ -235,7 +235,11 @@ class Post(object):
         """
         hw = torch.clamp(right_bottom - left_top, min=0.0)
         return hw[..., 0] * hw[..., 1]
-
+"""
+image_size = 300
+image_mean = np.array([127, 127, 127])  # RGB layout
+image_std = 128.0
+"""
 
 class PredictionTransform:
     def __init__(self, size, mean=0.0, std=1.0):
@@ -260,7 +264,7 @@ if __name__ == "__main__":
         image_path = os.path.join(image_dir,name)
         image_bgr = cv2.imread(image_path)
         image_rgb = cv2.cvtColor(image_bgr,cv2.COLOR_BGR2RGB)
-        # img_tensor = image_deal(image_path)
+        # image = image_deal(image_path)
         image = transform(image_rgb)
         image = image.unsqueeze(0)
         scores,boxes = model.forward(to_numpy(image))
