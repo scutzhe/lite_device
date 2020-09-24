@@ -30,8 +30,8 @@ def image_deal(image_path):
     transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor()
                                     ])
     img_tensor = transform(image_resize)
-    img_tensor = img_tensor.unsqueeze(0)
-    return img_tensor
+    input_tensor = img_tensor.unsqueeze(0)
+    return input_tensor
 
 def to_numpy(tensor):
     """
@@ -245,7 +245,7 @@ class PredictionTransform:
     def __init__(self, size, mean=0.0, std=1.0):
         self.transform = Compose([
             Resize(size),
-            SubtractMeans(mean),
+            SubtractMeans(mean), #减均值
             lambda img, boxes=None, labels=None: (img / std, boxes, labels),
             ToTensor()
         ])
@@ -282,6 +282,6 @@ if __name__ == "__main__":
             box = boxes[i, :]
             cv2.rectangle(image_bgr, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (255, 0, 0), 2)
             # label = f"{class_names[labels[i]]}: {prob[i]:.2f}"
-            cv2.imshow("image",image_bgr)
-            cv2.waitKey(1000)
+        cv2.imshow("image",image_bgr)
+        cv2.waitKey(1000)
             # cv2.imwrite("eval_results" + "/" +"{}".format(name),image_bgr)
