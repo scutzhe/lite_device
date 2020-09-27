@@ -39,7 +39,7 @@ def model_onnx(net,dummy_input,onnx_path,inputs,outputs):
 
 
 if __name__ == "__main__":
-    model_path = "models/90_1.83812066167593.pth"
+    model_path = "models/100_1.826955000559489.pth"
     onnx_path = "onnx_model/electronic_tag.onnx"
     dummy_input = torch.randn(1, 3, 300, 300).to("cuda")
     inputs, outputs = ["input"],["scores","boxes"]

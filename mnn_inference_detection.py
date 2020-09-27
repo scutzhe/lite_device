@@ -31,21 +31,28 @@ def inference(model_path,image_path):
     # image_mean = np.array([94, 111, 118])
     # image_std = np.array([137.0, 99.0, 104.0])
 
+
     # 加载mnn
     vars = F.load_as_dict(model_path)
     inputVar = vars["input"]
     # 查看输入信息
     print('input shape: ', inputVar.shape)
 
-    input_image = Image.open(image_path)
+    # input_image = Image.open(image_path)
+    input_image = cv2.imread(image_path)
+    input_image = cv2.resize(input_image,(300,300),interpolation=cv2.INTER_CUBIC)
+    input_image = cv2.cvtColor(input_image,cv2.COLOR_BGR2RGB)
+    # input_image = (input_image - image_mean) / image_std
     # transform = T.Compose([
     #     T.Resize((300,300)),
     #     T.ToTensor(),
     #     T.Normalize(image_mean, image_std),
     # ])
     transform = T.Compose([
-        T.Resize((300, 300)),
-        T.ToTensor()]
+        # T.Resize((300, 300)),
+        SubtractMeansStd(image_mean, image_std),
+        T.ToTensor(),
+    ]
     )
     input_tensor = transform(input_image)
     inputVar.write(input_tensor.tolist())
@@ -62,24 +69,14 @@ def inference(model_path,image_path):
 
     return scores,boxes
 
-class ToPercentCoords(object):
-    def __call__(self, image, boxes=None, labels=None):
-        height, width, channels = image.shape
-        boxes[:, 0] /= width
-        boxes[:, 2] /= width
-        boxes[:, 1] /= height
-        boxes[:, 3] /= height
+class SubtractMeansStd(object):
+    def __init__(self, mean, std):
+        self.mean = mean
+        self.std = std
 
-        return image, boxes, labels
-
-class Resize(object):
-    def __init__(self, size=300):
-        self.size = size
-
-    def __call__(self, image, boxes=None, labels=None):
-        image = cv2.resize(image, (self.size,
-                                 self.size))
-        return image, boxes, labels
+    def __call__(self, image):
+        image = (image - self.mean)/self.std
+        return image
 
 def image_deal(image_path):
     """
@@ -256,7 +253,7 @@ if __name__ == '__main__':
             print("x1,y1,x2,y2=",int(box[0]), int(box[1]), int(box[2]), int(box[3]))
             cv2.rectangle(image_bgr, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (255, 0, 0), 2)
         cv2.imshow("image",image_bgr)
-        cv2.waitKey(1000)
+        cv2.waitKey(10000)
         # cv2.imwrite("result.jpg",image_bgr)
 
 # if __name__ == '__main__':
