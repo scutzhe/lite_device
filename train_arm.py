@@ -27,14 +27,13 @@ from net.config import ssd_config
 from data.data_preprocessing import TrainAugmentation, TestTransform
 
 from tensorboardX import SummaryWriter
-from eval import get_map
 
 os.environ["CUDA_DEVICE_ORDER"] = 'PCI_BUS_ID'
 os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
 parser = argparse.ArgumentParser(description='Single Shot MultiBox Detector Training With Pytorch')
-parser.add_argument("--dataset",default="/home/zhex/data/army",help = "dataset path")
-parser.add_argument('--label_file_path', default="/home/zhex/data/army/labels.txt",help='label path')
+parser.add_argument("--dataset",default="/home/zhex/data/arm_device_voc",help = "dataset path")
+parser.add_argument('--label_file_path', default="/home/zhex/data/arm_device_voc/labels.txt",help='label path')
 
 parser.add_argument('--balance_data', action='store_true',
                     help="Balance training data by down-sampling more frequent labels.")
@@ -48,7 +47,7 @@ parser.add_argument('--mb2_width_mult', default=1.0, type=float,
                     help='Width Multiplifier for MobilenetV2')
 
 # Params for SGD
-parser.add_argument('--lr', '--learning-rate', default=1e-3, type=float,
+parser.add_argument('--lr', '--learning-rate', default=5e-4, type=float,
                     help='initial learning rate')
 parser.add_argument('--momentum', default=0.9, type=float,
                     help='Momentum value for optim')
@@ -66,7 +65,7 @@ parser.add_argument('--extra_layers_lr', default=None, type=float,
 parser.add_argument('--base_net',
                     help='Pretrained base model')
 parser.add_argument('--pretrained_ssd', help='Pre-trained base model')
-parser.add_argument('--resume', default="models/195_1.9350172951817513.pth", type=str,
+parser.add_argument('--resume', default="models/70_2.1875808318456014.pth", type=str,
                     help='Checkpoint state_dict file to resume training from')
 
 # Scheduler
@@ -84,7 +83,7 @@ parser.add_argument('--t_max', default=120, type=float,
 # Train params
 parser.add_argument('--batch_size', default=32, type=int,
                     help='Batch size for training')
-parser.add_argument('--num_epochs', default=100, type=int,
+parser.add_argument('--num_epochs', default=200, type=int,
                     help='the number epochs')
 parser.add_argument('--num_workers', default=4, type=int,
                     help='Number of workers used in dataloading')
@@ -168,7 +167,6 @@ def test(loader, net, criterion, device):
 
 
 def load_model(net, optimizer, last_epoch, best_mAP):
-    timer.start("Load Model")
     # if args.resume:
     #     ckpt = torch.load(args.resume)
     #     net.load_state_dict(ckpt['model'], False)
@@ -181,6 +179,7 @@ def load_model(net, optimizer, last_epoch, best_mAP):
     if args.resume:
         net.load_state_dict(torch.load(args.resume))
         logging.info("Resume from the model {}".format(args.resume))
+        print("Resume from the model {}".format(args.resume))
 
     elif args.base_net:
         net.init_from_base_net(args.base_net)
@@ -190,18 +189,11 @@ def load_model(net, optimizer, last_epoch, best_mAP):
         net.init_from_pretrained_ssd(args.pretrained_ssd)
         logging.info(f"Init from pretrained ssd {args.pretrained_ssd}")
 
-    logging.info(f'Took {timer.end("Load Model"):.2f} seconds to load the model.')
 
     return net, optimizer, last_epoch, best_mAP
 
 
 if __name__ == '__main__':
-    timer = Timer()
-    if not os.path.exists("log/{}".format(args.net_name)):
-        os.makedirs("log/{}".format(args.net_name))
-    log_path = "log/{}".format(args.net_name)
-    writer = SummaryWriter(log_path)
-
     create_net = lambda num: create_mobilenetv2_ssd_lite(num, width_mult=args.mb2_width_mult)
     config = ssd_config
 
@@ -238,9 +230,11 @@ if __name__ == '__main__':
         )}
     ]
 
+    # first init and to cuda
     net.init()
     net.to(DEVICE)
-    optimizer = torch.optim.SGD(params, lr=args.lr, momentum=args.momentum,weight_decay=args.weight_decay)
+    # optimizer = torch.optim.SGD(params, lr=args.lr, momentum=args.momentum,weight_decay=args.weight_decay)
+    optimizer = torch.optim.Adam(params, lr=args.lr,weight_decay=args.weight_decay)
     net, optimizer, last_epoch, best_mAP = load_model(net, optimizer, last_epoch, best_mAP)
     # net.load_state_dict(torch.load(args.resume))
     logging.info("load pre_model successful !!!")
@@ -279,4 +273,4 @@ if __name__ == '__main__':
                 f"Validation Regression Loss {val_regression_loss:.4f}, " +
                 f"Validation Classification Loss: {val_classification_loss:.4f}"
             )
-            torch.save(net.state_dict(),"models" + "/" + "{}_{}.pth".format(epoch,val_loss))
+            torch.save(net.state_dict(),"models" + "/" + "{}_{}.pth".format(epoch+70,val_loss))

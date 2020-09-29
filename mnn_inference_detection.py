@@ -26,11 +26,10 @@ def inference(model_path,image_path):
     @return:
     """
     # mean std
-    image_mean = np.array([127, 127, 127])
-    image_std = np.array([128.0, 128.0, 128.0])
-    # image_mean = np.array([94, 111, 118])
-    # image_std = np.array([137.0, 99.0, 104.0])
-
+    # image_mean = np.array([127, 127, 127])
+    # image_std = np.array([128.0, 128.0, 128.0])
+    image_mean = np.array([94, 111, 118])
+    image_std = np.array([137.0, 99.0, 104.0])
 
     # 加载mnn
     vars = F.load_as_dict(model_path)
@@ -55,6 +54,7 @@ def inference(model_path,image_path):
     ]
     )
     input_tensor = transform(input_image)
+    print(input_tensor.shape)
     inputVar.write(input_tensor.tolist())
 
     # 查看输出结果
@@ -111,8 +111,8 @@ class Post(object):
         self.boxes = boxes
 
     def get_final_result(self, top_k=10, prob_threshold=0.01):
-        scores = to_tensor(self.scores[0])
-        boxes = to_tensor(self.boxes[0])
+        scores = to_tensor(self.scores)
+        boxes = to_tensor(self.boxes)
         nms_st = time.time()
         # print("scores.size()=",scores.size())
         # print("boxes.size()=",boxes.size())
@@ -233,46 +233,53 @@ class Post(object):
         hw = torch.clamp(right_bottom - left_top, min=0.0)
         return hw[..., 0] * hw[..., 1]
 
-if __name__ == '__main__':
-    model_path = "onnx_model/electronic_tag.mnn"
-    image_path = "test.jpg"
-    image_bgr = cv2.imread(image_path)
-    scores, boxes = inference(model_path, image_path)
-    print("scores[0][0]=",scores[0][0][0])
-    print("scores[0][1]=",scores[0][0][1])
-    print("boxes[0][0]=",boxes[0][0][0])
-    print("boxes[0][1]=",boxes[0][0][1])
-    print("boxes[0][2]=",boxes[0][0][2])
-    print("boxes[0][3]=",boxes[0][0][3])
-    post_dealing = Post(scores, boxes)
-    boxes, labels, prob = post_dealing.get_final_result()
-    boxes = boxes.numpy()
-    if boxes.shape[0] != 0:
-        for i in range(boxes.shape[0]):
-            box = boxes[i, :]
-            print("x1,y1,x2,y2=",int(box[0]), int(box[1]), int(box[2]), int(box[3]))
-            cv2.rectangle(image_bgr, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (255, 0, 0), 2)
-        cv2.imshow("image",image_bgr)
-        cv2.waitKey(10000)
-        # cv2.imwrite("result.jpg",image_bgr)
-
 # if __name__ == '__main__':
+#     # 模型文件是官方的
 #     model_path = "onnx_model/electronic_tag.mnn"
-#     image_dir = "/home/zhex/test_result/tag_device"
-#     for name in tqdm(os.listdir(image_dir)):
-#         image_path = os.path.join(image_dir,name)
-#         image_bgr = cv2.imread(image_path)
-#         scores, boxes = mnn_infer(model_path,image_path)
-#         post_dealing = Post(scores,boxes)
-#         boxes, labels, prob = post_dealing.get_final_result()
-#         # print("boxes,labels,prob=",boxes,labels,prob)
-#         boxes = boxes.numpy()
-#         if boxes.shape[0] == 0:
-#             continue
+#     image_path = "test.jpg"
+#     image_bgr = cv2.imread(image_path)
+#     scores, boxes = inference(model_path, image_path)
+#     scores = np.array(scores).reshape(-1,2)
+#     boxes = np.array(boxes).reshape(-1,4)
+#     # print("scores.shape:",scores.shape)
+#     # print("boxes.shape:",boxes.shape)
+#     # print("scores[0][0]:",scores[0][0])
+#     # print("scores[0][1]:",scores[0][1])
+#     # print("boxes[0][0]:",boxes[0][0])
+#     # print("boxes[0][1]:",boxes[0][1])
+#     # print("boxes[0][2]:",boxes[0][2])
+#     # print("boxes[0][3]:",boxes[0][3])
+#     post_dealing = Post(scores, boxes)
+#     boxes, labels, prob = post_dealing.get_final_result()
+#     boxes = boxes.numpy()
+#     if boxes.shape[0] != 0:
 #         for i in range(boxes.shape[0]):
 #             box = boxes[i, :]
+#             print("x1,y1,x2,y2=",int(box[0]), int(box[1]), int(box[2]), int(box[3]))
 #             cv2.rectangle(image_bgr, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (255, 0, 0), 2)
-#             # label = f"{class_names[labels[i]]}: {prob[i]:.2f}"
 #         cv2.imshow("image",image_bgr)
-#         cv2.waitKey(1000)
-#             # cv2.imwrite("eval_results" + "/" +"{}".format(name),image_bgr)
+#         cv2.waitKey(10000)
+#         # cv2.imwrite("result.jpg",image_bgr)
+
+if __name__ == '__main__':
+    model_path = "onnx_model/electronic_tag.mnn"
+    image_dir = "/home/zhex/test_result/tag_device"
+    for name in tqdm(os.listdir(image_dir)):
+        image_path = os.path.join(image_dir,name)
+        image_bgr = cv2.imread(image_path)
+        scores, boxes = inference(model_path,image_path)
+        scores = np.array(scores).reshape(-1, 2)
+        boxes = np.array(boxes).reshape(-1,4)
+        post_dealing = Post(scores,boxes)
+        boxes, labels, prob = post_dealing.get_final_result()
+        # print("boxes,labels,prob=",boxes,labels,prob)
+        boxes = boxes.numpy()
+        if boxes.shape[0] == 0:
+            continue
+        for i in range(boxes.shape[0]):
+            box = boxes[i, :]
+            cv2.rectangle(image_bgr, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (255, 0, 0), 2)
+            # label = f"{class_names[labels[i]]}: {prob[i]:.2f}"
+        cv2.imshow("image",image_bgr)
+        cv2.waitKey(500)
+            # cv2.imwrite("eval_results" + "/" +"{}".format(name),image_bgr)
