@@ -338,8 +338,8 @@ def get_val_all(image_dir,txt_file_path,save_dir):
 
 # if __name__ == "__main__":
 #     image_dir = "/home/zhex/data/arm_device_all/images"
-#     txt_file_path = "/home/zhex/data/arm_device_voc/val.txt"
-#     save_dir = "/home/zhex/data/arm_device_all/mini_images"
+#     txt_file_path = "/home/zhex/data/arm_device_voc/train.txt"
+#     save_dir = "/home/zhex/data/arm_device_all/mini_images_train_2"
 #     get_val_all(image_dir,txt_file_path,save_dir)
 
 # if __name__ == '__main__':

@@ -12,10 +12,8 @@
 from __future__ import print_function
 import numpy as np
 import MNN
-import cv2
 import time
 from PIL import Image
-
 
 
 class SubtractMeansStd(object):
@@ -57,8 +55,8 @@ def inference(model_path,img_path):
                            image, MNN.Tensor_DimensionType_Tensorflow)
 
 
-    # input_tensor.copyFrom(tensorflow_input)
-    input_tensor.copyFrom(caffe_input)
+    input_tensor.copyFrom(tensorflow_input)
+    # input_tensor.copyFrom(caffe_input)
 
     # 执行推断
     ctime = time.time()
@@ -92,7 +90,7 @@ def cal_distance_nonormal(tuple1,tuple2):
 
 
 if __name__ == "__main__":
-    model_path = "/home/zhex/share_folder/mobilenetv3_large_100.mnn"
+    model_path = "/home/zhex/share_folder/device_recognition_224.mnn"
     image_path1 = "/home/zhex/git_me/DeviceRetrieval/resource/1-1.jpg"
     image_path2 = "/home/zhex/git_me/DeviceRetrieval/resource/2-2.jpg"
     feature1 = inference(model_path,image_path1)

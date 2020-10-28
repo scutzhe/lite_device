@@ -45,16 +45,17 @@ def inference(mnn_model_path,image_path):
     # input_image = cv2.resize(input_image,(64,64),interpolation=cv2.INTER_CUBIC)
     # input_image = cv2.cvtColor(input_image,cv2.COLOR_BGR2RGB)
     # input_image = (input_image - image_mean) * image_std
-    transform = T.Compose([
-        T.Resize((224,224)),
-        T.ToTensor(),
-        # T.Normalize(image_mean, image_std),
-    ])
     # transform = T.Compose([
-    #     # T.Resize((224, 224)),
-    #     SubtractMeansStd(image_mean, image_std),
+    #     # T.Resize((224,224)),
+    #     T.Resize((160,160)),
     #     T.ToTensor(),
+    #     # T.Normalize(image_mean, image_std),
     # ])
+    transform = T.Compose([
+        T.Resize((224, 224)),
+        SubtractMeansStd(image_mean, image_std),
+        T.ToTensor(),
+    ])
     input_tensor = transform(input_image)
     # print("before input_tensor.size()=",input_tensor.size())
     # input_tensor = torch.unsqueeze(input_tensor,0)
@@ -129,14 +130,15 @@ def cal_distance_nonormal(tuple1,tuple2):
 
 
 if __name__ == '__main__':
-    mnn_model_path = "/home/zhex/share_folder/mobilenetv3_large_100.mnn"
+    mnn_model_path = "/home/zhex/share_folder/device_recognition_224.mnn"
+    # mnn_model_path = "/home/zhex/share_folder/mobilenetv3_large_100.mnn"
     # mnn_model_path = "/home/zhex/share_folder/sigarette_Y.mnn"
     image_one_path = "/home/zhex/git_me/DeviceRetrieval/resource/1-1.jpg"
     image_two_path = "/home/zhex/git_me/DeviceRetrieval/resource/1-2.jpg"
     output1 = inference(mnn_model_path,image_one_path)
     output2 = inference(mnn_model_path,image_two_path)
-    print("output1[0]:",output1[0])
-    print("output1[999]:",output1[999])
+    # print("output1[0]:",output1[0])
+    # print("output1[999]:",output1[999])
     print(len(output1))
     output1 = output1 / np.linalg.norm(output1)
     output2 = output2 / np.linalg.norm(output2)

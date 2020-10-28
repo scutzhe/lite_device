@@ -119,6 +119,7 @@ class Resize(object):
         image = cv2.resize(image, (self.size,
                                  self.size))
         return image, boxes, labels
+
 class Resize_w_h(object):
     def __init__(self, width=300,height=300):
         self.width = width
