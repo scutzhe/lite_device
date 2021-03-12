@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-# @author  : 郑祥忠
-# @license : (C) Copyright,2016-2020,广州海格星航科技
+# @author  : dylen
+# @license :
 # @contact : dylenzheng@gmail.com
 # @file    : tflite_inference_device_recognition.py
 # @time    : 9/27/20 11:44 AM

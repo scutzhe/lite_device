@@ -8,9 +8,9 @@
 """
 # -*- coding: utf-8 -*-
 """
-@author  : 秦丹峰
+@author  : dylen
 @contact : daneven.jim@gmail.com
-@license : (C) Copyright, 广州海格星航信息科技有限公司
+@license : 
 @time    : 2020/8/4 22:52
 @file    : detection_demo.py
 @desc    : 运行demo

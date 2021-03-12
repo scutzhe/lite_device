@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-# @author  : 郑祥忠
-# @license : (C) Copyright,2016-2020,广州海格星航科技
+# @author  : dylen
+# @license :
 # @contact : dylenzheng@gmail.com
 # @file    : mnn_inference.py
 # @time    : 9/23/20 16:24 AM

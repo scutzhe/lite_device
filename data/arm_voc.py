@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-# @author  : 郑祥忠
-# @license : (C) Copyright,2016-2020,广州海格星航科技
+# @author  : dylen
+# @license :
 # @contact : dylenzheng@gmail.com
 # @file    : arm_voc.py
 # @time    : 9/17/20 5:04 PM
